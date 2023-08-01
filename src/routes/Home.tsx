@@ -69,9 +69,9 @@ const Home = () => {
         <h1 className="text-5xl">Super-Duper Counter App</h1>
         <button
           onClick={() => {
-            console.log("Please show me this!");
-            console.log("What is this?", process.env.AUTH0_REDIRECT_URI);
-            // loginWithRedirect();
+            // console.log("Please show me this!");
+            // console.log("What is this?", process.env.AUTH0_REDIRECT_URI);
+            loginWithRedirect();
           }}
           className="border-2 border-white rounded-lg p-3 hover:bg-white hover:text-[#151515] transition-all"
         >
