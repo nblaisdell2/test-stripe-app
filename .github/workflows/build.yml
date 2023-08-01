@@ -38,14 +38,14 @@ jobs:
       - name: Test the Application
         run: npm run test
       - name: Check needed values
-        run: bash check_github_secrets.sh ${{ secrets.AWS_ACCOUNT_ID || 'none' }} ${{ secrets.AWS_REGION || 'none' }} ${{ secrets.SITE_URL || 'none' }} ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID || 'none' }} ${{ secrets.AWS_GHACTIONS_ROLENAME || 'none' }}
+        run: bash check_github_secrets.sh ${{ secrets.AWS_ACCOUNT_ID || 'none' }} ${{ secrets.AWS_REGION || 'none' }} ${{ secrets.AWS_CERTIFICATE_ARN || 'none' }} ${{ secrets.SITE_URL || 'none' }} ${{ secrets.SUBDOMAIN || 'none' }} ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID || 'none' }} ${{ secrets.AWS_GHACTIONS_ROLENAME || 'none' }}
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.AWS_GHACTIONS_ROLENAME }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Create AWS Infrastructure
-        run: bash create_aws_site.sh ${{ secrets.AWS_ACCOUNT_ID }} ${{ secrets.AWS_REGION }} ${{ secrets.SITE_URL }}
+        run: bash create_aws_site.sh ${{ secrets.AWS_ACCOUNT_ID }} ${{ secrets.AWS_REGION }} ${{ secrets.SITE_URL }} ${{ secrets.SUBDOMAIN }} ${{ secrets.AWS_CERTIFICATE_ARN }}
       - name: Sync Files w/ S3 Bucket
         run: aws s3 sync ./dist s3://${{ secrets.SITE_URL }} --delete
       - name: Invalidate CloudFront Distribution Cache
