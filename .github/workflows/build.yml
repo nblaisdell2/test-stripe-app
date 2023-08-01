@@ -39,6 +39,7 @@ jobs:
           echo AUTH0_CLIENT_SECRET=${{ secrets.ENV_AUTH0_CLIENT_SECRET }} >> .env
           echo AUTH0_REDIRECT_URI=${{ secrets.ENV_AUTH0_REDIRECT_URI }} >> .env
           echo BASE_API_URL=${{ secrets.ENV_BASE_API_URL }} >> .env
+          cat .env
       - name: Install Dependencies
         run: npm ci
       - name: Build the Application

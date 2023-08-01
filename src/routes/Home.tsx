@@ -68,7 +68,10 @@ const Home = () => {
       <div className="h-screen bg-primary flex flex-col justify-center items-center space-y-8 text-white font-bold">
         <h1 className="text-5xl">Super-Duper Counter App</h1>
         <button
-          onClick={() => loginWithRedirect()}
+          onClick={() => {
+            console.log("What is this?", process.env.AUTH0_REDIRECT_URI);
+            // loginWithRedirect();
+          }}
           className="border-2 border-white rounded-lg p-3 hover:bg-white hover:text-[#151515] transition-all"
         >
           Sign In
