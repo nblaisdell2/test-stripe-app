@@ -69,6 +69,7 @@ const Home = () => {
         <h1 className="text-5xl">Super-Duper Counter App</h1>
         <button
           onClick={() => {
+            console.log("Please show me this!");
             console.log("What is this?", process.env.AUTH0_REDIRECT_URI);
             // loginWithRedirect();
           }}
