@@ -70,7 +70,11 @@ const Home = () => {
         <button
           onClick={() => {
             // console.log("Please show me this!");
-            // console.log("What is this?", process.env.AUTH0_REDIRECT_URI);
+            console.log("What is this domain?", process.env.AUTH0_DOMAIN);
+            console.log(
+              "What is this redirect?",
+              process.env.AUTH0_REDIRECT_URI
+            );
             loginWithRedirect();
           }}
           className="border-2 border-white rounded-lg p-3 hover:bg-white hover:text-[#151515] transition-all"
