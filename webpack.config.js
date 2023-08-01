@@ -1,5 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+const Dotenv = require("dotenv-webpack");
 
 // Needed to run locally
 const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
@@ -7,6 +9,9 @@ const HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
   filename: "index.html",
   inject: "body",
 });
+
+const NodePolyfillPluginConfig = new NodePolyfillPlugin();
+const DotenvPluginConfig = new Dotenv();
 
 /*We are basically telling webpack to take index.js from entry. Then check for all file extensions in resolve. 
 After that apply all the rules in module.rules and produce the output and place it in main.js in the public folder.*/
@@ -32,7 +37,11 @@ module.exports = {
     filename: "main.js",
   },
   devtool: "source-map",
-  plugins: [HTMLWebpackPluginConfig],
+  plugins: [
+    HTMLWebpackPluginConfig,
+    NodePolyfillPluginConfig,
+    DotenvPluginConfig,
+  ],
   /** "target"
    * setting "node" as target app (server side), and setting it as "web" is
    * for browser (client side). Default is "web"
@@ -43,6 +52,7 @@ module.exports = {
      * port of dev server
      */
     port: "3000",
+    historyApiFallback: true,
 
     // /** "static"
     //  * This property tells Webpack what static file it should serve
