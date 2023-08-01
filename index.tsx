@@ -33,6 +33,9 @@ const router = createBrowserRouter([
   },
 ]);
 
+console.log("Auth0 Domain:", process.env.AUTH0_DOMAIN);
+console.log("Auth0 URI:", process.env.AUTH0_REDIRECT_URI);
+
 const queryClient = new QueryClient();
 const root = createRoot(document.getElementById("root") as Element);
 root.render(
