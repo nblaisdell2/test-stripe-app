@@ -65,7 +65,7 @@ const Home = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="h-screen bg-blue-500 flex flex-col justify-center items-center space-y-8 text-white font-bold">
+      <div className="h-screen bg-red-500 flex flex-col justify-center items-center space-y-8 text-white font-bold">
         <h1 className="text-5xl">Super-Duper Counter App</h1>
         <button
           onClick={() => {
