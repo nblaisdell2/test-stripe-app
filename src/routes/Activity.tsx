@@ -1,99 +1,45 @@
 import React, { useEffect, useState } from "react";
-import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
-import { log, logWarn } from "../../utils/logs/log";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 
-type Props = {};
+import { log, logError } from "../../utils/log";
+import { useSQLQuery } from "../hooks/useSQLQuery";
+import { useSQLMutation } from "../hooks/useSQLMutation";
+import LoadingScreen from "../components/LoadingScreen";
+import { getUserDetails, updateUserCount } from "../User";
+import { QueryKey, saveNewCount } from "../Queries";
+import { navigateToCustomerPortal } from "../Stripe";
 
-export type User = {
-  UserID: string;
-  UserName: string;
-  UserEmail: string;
-  CurrCount: number;
-  SubscriptionStatus: string;
-  IsInTrial: string;
-  StartDateTime: string;
-  EndDateTime: string;
-  StripeCustomerID: string;
-};
+const MAX_COUNT = 10000000;
 
-function Activity({}: Props) {
-  const { isAuthenticated, user, logout } = useAuth0();
+function useActivity() {
+  const { user, logout } = useAuth0();
+  const navigate = useNavigate();
+
   const [count, setCount] = useState(0);
 
-  // TODO: Fix ReactQuery defaults
-  //   - https://medium.com/in-the-weeds/fetch-a-query-only-once-until-page-refresh-using-react-query-a333d00b86ff
-
-  // useQuery syntax
-  //  data      = Return data from query
-  //  isLoading = true if still loading. Allows us to render conditionally
-  //  isError   = true if an error occurred during the query
-  //  queryKey  = used for caching
-  //  queryFn   = function used to actually query some API and return to useQuery
   const {
     data: currUser,
     isLoading,
     isError,
-  } = useQuery({
-    queryKey: ["data"],
-    refetchOnWindowFocus: false,
-    // refetchOnmount: false,
-    refetchOnReconnect: false,
-    retry: false,
-    staleTime: 1000 * 60 * 60 * 24,
-    queryFn: async () => {
-      log("inside query", user?.email);
-      const url = `${process.env.BASE_API_URL}/user`;
-      const { data } = await axios.get(url, {
-        params: {
-          UserEmail: user?.email,
-        },
-      });
-      //   log("Got data", data);
-      setCount(data.user.CurrCount);
-      // Casting the data to our known schema before returning, for maximum type-safety
-      return data.user as User;
-    },
-  });
+  } = useSQLQuery(QueryKey.GET_USER_DETAILS, getUserDetails(user?.email));
 
-  const { mutate: saveCount } = useMutation({
-    mutationKey: ["save-count"],
-    mutationFn: async () => {
-      const url = `${process.env.BASE_API_URL}/save-count`;
-      const { data } = await axios.post(url, {
-        UserID: currUser?.UserID,
-        NewCount: count,
-      });
-
-      return data;
-    },
-  });
-
-  const { mutate: customerPortal } = useMutation({
-    mutationKey: ["customer-portal"],
-    mutationFn: async () => {
-      const url = `${process.env.BASE_API_URL}/stripe/create-portal-session`;
-      const { data } = await axios.post(url, {
-        UserID: currUser?.UserID,
-        StripeCustomerID: currUser?.StripeCustomerID,
-      });
-
-      console.log("Return data for customer portal", data);
-      window.location.href = data.sessionURL;
-
-      return data;
-    },
-  });
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    log("About to redirect", { user, currUser });
-    if (!isLoading && user && currUser?.SubscriptionStatus != "Active") {
-      window.location.href = "/subscription";
+  const { mutate: saveCount, error: saveCountErr } = useSQLMutation(
+    QueryKey.SAVE_COUNT,
+    saveNewCount(currUser?.UserID, count),
+    QueryKey.GET_USER_DETAILS,
+    false,
+    updateUserCount(count),
+    3000,
+    async () => {
+      if (currUser) setCount(currUser.CurrCount);
     }
-  }, [user, currUser, isLoading]);
+  );
+
+  const { mutate: customerPortal } = useSQLMutation(
+    QueryKey.GET_STRIPE_CUSTOMER_URL,
+    navigateToCustomerPortal(currUser)
+  );
 
   const updateCount = (type: string, num: number) => {
     let newCount = count;
@@ -109,8 +55,8 @@ function Activity({}: Props) {
         break;
     }
 
-    if (newCount >= 10000000) {
-      newCount = 10000000;
+    if (newCount >= MAX_COUNT) {
+      newCount = MAX_COUNT;
     }
     if (newCount < 0) {
       newCount = 0;
@@ -119,15 +65,52 @@ function Activity({}: Props) {
     setCount(newCount);
   };
 
-  if (isLoading) {
+  useEffect(() => {
+    if (currUser) {
+      if (currUser?.SubscriptionStatus != "Active") {
+        navigate("/subscription");
+      }
+      setCount(currUser.CurrCount);
+    }
+  }, [currUser]);
+
+  return {
+    isLoading,
+    isError,
+    currUser,
+    count,
+    logout,
+    updateCount,
+    saveCount,
+    saveCountErr,
+    customerPortal,
+  };
+}
+
+function Activity() {
+  const {
+    isLoading,
+    isError,
+    currUser,
+    count,
+    logout,
+    updateCount,
+    saveCount,
+    saveCountErr,
+    customerPortal,
+  } = useActivity();
+
+  if (isError) {
     return (
       <div className="h-screen bg-primary flex flex-col justify-center items-center space-y-8 text-white font-bold">
-        <h1>Loading...</h1>
+        <h1 className="text-red-500">Error!</h1>
       </div>
     );
   }
 
-  log("User", currUser);
+  if (isLoading || currUser?.SubscriptionStatus != "Active") {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="h-screen bg-primary flex flex-col items-center text-white font-bold">
@@ -135,6 +118,9 @@ function Activity({}: Props) {
         {/* Top Banner */}
         <div className="mt-5 flex justify-between items-center">
           <div className="text-3xl">Welcome, {currUser?.UserName}!</div>
+          <div>
+            <Link to={"/test"}>Test Page</Link>
+          </div>
           <div
             onClick={() => logout()}
             className="text-xl hover:underline hover:cursor-pointer"
@@ -249,13 +235,22 @@ function Activity({}: Props) {
               </div>
             </div>
 
-            {/* Save Button */}
-            <button
-              onClick={() => saveCount()}
-              className="h-fit text-2xl border-2 border-white rounded-lg p-3 hover:bg-white hover:text-[#151515] transition-all"
-            >
-              Save
-            </button>
+            <div className="flex flex-col items-center space-y-4">
+              {saveCountErr && (
+                <div className="flex flex-col items-center text-yellow-300">
+                  <div>Error updating count!</div>
+                  <div>Reverting to previous value</div>
+                </div>
+              )}
+              {/* Save Button */}
+              <button
+                onClick={() => saveCount()}
+                disabled={saveCountErr}
+                className="h-fit text-2xl border-2 border-white rounded-lg p-3 hover:bg-white hover:text-[#151515] transition-all"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -263,4 +258,4 @@ function Activity({}: Props) {
   );
 }
 
-export default withAuthenticationRequired(Activity);
+export default Activity;

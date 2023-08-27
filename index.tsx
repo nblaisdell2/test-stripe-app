@@ -5,15 +5,42 @@ config();
 import React from "react";
 import { createRoot } from "react-dom/client";
 
-import { Auth0Provider } from "@auth0/auth0-react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import Home from "./src/routes/Home";
-import ErrorPage from "./src/ErrorPage";
 import Activity from "./src/routes/Activity";
 import Subscription from "./src/routes/Subscription";
+import { Auth0ProviderWithNavigate } from "./src/components/Auth0WithNavigate";
+import Test from "./src/routes/Test";
+import ErrorPage from "./src/components/ErrorPage";
+import { AuthenticationGuard } from "./src/components/AuthenticationGuard";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // If a query fails, don't retry
+      retry: false,
+      retryOnMount: false,
+
+      // data is never considered stale
+      // Can I still update optimistically with this value?
+      staleTime: Infinity,
+
+      // suspense: true,
+
+      // // refetch options (shouldn't apply since data is never stale)
+      // refetchInterval: 60000, // number of ms to refetch next
+      // refetchIntervalInBackground: true, // true if refetch in background, false otherwise
+      // refetchOnWindowFocus: false,
+      // refetchOnReconnect: false,
+
+      // Default Query to run, can be overridden
+      // queryFn: defaultQueryFn,
+    },
+  },
+});
 
 const router = createBrowserRouter([
   {
@@ -23,29 +50,26 @@ const router = createBrowserRouter([
   },
   {
     path: "/activity",
-    element: <Activity />,
+    element: <AuthenticationGuard component={Activity} />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/test",
+    element: <Test />,
     errorElement: <ErrorPage />,
   },
   {
     path: "/subscription",
-    element: <Subscription />,
+    element: <AuthenticationGuard component={Subscription} />,
     errorElement: <ErrorPage />,
   },
 ]);
 
-console.log("Auth0 Domain:", process.env.AUTH0_DOMAIN);
-console.log("Auth0 URI:", process.env.AUTH0_REDIRECT_URI);
-
-const queryClient = new QueryClient();
-const root = createRoot(document.getElementById("root") as Element);
+const root = createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <QueryClientProvider client={queryClient}>
-    <Auth0Provider
-      domain={process.env.AUTH0_DOMAIN as string}
-      clientId={process.env.AUTH0_CLIENT_ID as string}
-      authorizationParams={{ redirect_uri: process.env.AUTH0_REDIRECT_URI }}
-    >
+    <Auth0ProviderWithNavigate>
       <RouterProvider router={router} />
-    </Auth0Provider>
+    </Auth0ProviderWithNavigate>
   </QueryClientProvider>
 );

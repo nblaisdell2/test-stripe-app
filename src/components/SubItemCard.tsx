@@ -1,7 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
 import React from "react";
-import { log } from "../utils/logs/log";
+import { useSQLMutation } from "../hooks/useSQLMutation";
+import { QueryKey, getStripePaymentSessionURL } from "../Queries";
+import { navigateToPaymentSession } from "../Stripe";
 
 type Highlight = {
   isHighlighted: boolean;
@@ -19,7 +19,7 @@ type Product = {
   price: Price;
 };
 
-type SubItem = {
+export type SubItem = {
   highlight: Highlight;
   isTestMode: boolean;
   product: Product;
@@ -28,29 +28,15 @@ type SubItem = {
 
 type Props = {
   subItem: SubItem;
-  userEmail: string;
-  customerID: string;
 };
 
-function SubItem({ subItem, userEmail, customerID }: Props) {
-  log("Sub Item Props", { subItem, userEmail, customerID });
-  const { mutate: openPaymentSession } = useMutation({
-    mutationKey: ["create-subscription-payment-session"],
-    mutationFn: async () => {
-      const url = `${process.env.BASE_API_URL}/stripe/create-checkout-session`;
-      const { data } = await axios.post(url, {
-        stripeCustomerID: customerID,
-        userEmail: userEmail,
-        subFrequency: subItem.product.price.frequency,
-        subPrice: subItem.product.price.amount,
-      });
-
-      log("data from useMutation", data);
-      window.location.href = data.sessionURL;
-
-      return data;
-    },
-  });
+function SubItemCard({ subItem }: Props) {
+  const { mutate: openPaymentSession } = useSQLMutation(
+    QueryKey.GET_STRIPE_PAY_URL,
+    navigateToPaymentSession(subItem),
+    QueryKey.GET_USER_DETAILS,
+    true
+  );
 
   return (
     <div className="flex flex-col items-center border border-[#575757] bg-[#2D2D2D] rounded-md p-8 w-72">
@@ -101,4 +87,4 @@ function SubItem({ subItem, userEmail, customerID }: Props) {
   );
 }
 
-export default SubItem;
+export default SubItemCard;
