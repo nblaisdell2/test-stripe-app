@@ -7,7 +7,7 @@ import { useSQLQuery } from "../hooks/useSQLQuery";
 import { useSQLMutation } from "../hooks/useSQLMutation";
 import LoadingScreen from "../components/LoadingScreen";
 import { getUserDetails, updateUserCount } from "../User";
-import { QueryKey, saveNewCount } from "../Queries";
+import { QueryKey, saveNewCount, saveNewCountError } from "../Queries";
 import { navigateToCustomerPortal } from "../Stripe";
 
 const MAX_COUNT = 10000000;
@@ -35,6 +35,19 @@ function useActivity() {
       if (currUser) setCount(currUser.CurrCount);
     }
   );
+
+  const { mutate: saveCountWithError, error: saveCountWithErrorErr } =
+    useSQLMutation(
+      QueryKey.SAVE_COUNT_WITH_ERROR,
+      saveNewCountError(currUser?.UserID, count),
+      QueryKey.GET_USER_DETAILS,
+      false,
+      updateUserCount(count),
+      3000,
+      async () => {
+        if (currUser) setCount(currUser.CurrCount);
+      }
+    );
 
   const { mutate: customerPortal } = useSQLMutation(
     QueryKey.GET_STRIPE_CUSTOMER_URL,
@@ -83,6 +96,8 @@ function useActivity() {
     updateCount,
     saveCount,
     saveCountErr,
+    saveCountWithError,
+    saveCountWithErrorErr,
     customerPortal,
   };
 }
@@ -97,6 +112,8 @@ function Activity() {
     updateCount,
     saveCount,
     saveCountErr,
+    saveCountWithError,
+    saveCountWithErrorErr,
     customerPortal,
   } = useActivity();
 
@@ -111,6 +128,8 @@ function Activity() {
   if (isLoading || currUser?.SubscriptionStatus != "Active") {
     return <LoadingScreen />;
   }
+
+  log("[Activity.tsx]", currUser);
 
   return (
     <div className="h-screen bg-primary flex flex-col items-center text-white font-bold">
@@ -236,7 +255,7 @@ function Activity() {
             </div>
 
             <div className="flex flex-col items-center space-y-4">
-              {saveCountErr && (
+              {(saveCountErr || saveCountWithErrorErr) && (
                 <div className="flex flex-col items-center text-yellow-300">
                   <div>Error updating count!</div>
                   <div>Reverting to previous value</div>
@@ -245,10 +264,17 @@ function Activity() {
               {/* Save Button */}
               <button
                 onClick={() => saveCount()}
-                disabled={saveCountErr}
+                disabled={saveCountErr || saveCountWithErrorErr}
                 className="h-fit text-2xl border-2 border-white rounded-lg p-3 hover:bg-white hover:text-[#151515] transition-all"
               >
                 Save
+              </button>
+              <button
+                onClick={() => saveCountWithError()}
+                disabled={saveCountErr || saveCountWithErrorErr}
+                className="h-fit text-2xl border-2 border-white rounded-lg p-3 hover:bg-white hover:text-[#151515] transition-all"
+              >
+                Save w/ Error
               </button>
             </div>
           </div>
