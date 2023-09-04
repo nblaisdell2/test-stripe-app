@@ -16,7 +16,7 @@ function useActivity() {
   const { user, logout } = useAuth0();
   const navigate = useNavigate();
 
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(-1);
 
   const {
     data: currUser,
@@ -83,6 +83,7 @@ function useActivity() {
       if (currUser?.SubscriptionStatus != "Active") {
         navigate("/subscription");
       }
+
       setCount(currUser.CurrCount);
     }
   }, [currUser]);
@@ -125,7 +126,7 @@ function Activity() {
     );
   }
 
-  if (isLoading || currUser?.SubscriptionStatus != "Active") {
+  if (isLoading || currUser?.SubscriptionStatus != "Active" || count < 0) {
     return <LoadingScreen />;
   }
 

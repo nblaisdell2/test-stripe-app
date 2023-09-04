@@ -31,15 +31,20 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
-      - name: Populate Environment Variables
+      - name: Loading Environment Variables from GH Secrets
         run: |
           touch .env
-          echo AUTH0_DOMAIN=${{ secrets.ENV_AUTH0_DOMAIN }} >> .env
-          echo AUTH0_CLIENT_ID=${{ secrets.ENV_AUTH0_CLIENT_ID }} >> .env
-          echo AUTH0_CLIENT_SECRET=${{ secrets.ENV_AUTH0_CLIENT_SECRET }} >> .env
-          echo AUTH0_REDIRECT_URI=${{ secrets.ENV_AUTH0_REDIRECT_URI }} >> .env
-          echo BASE_API_URL=${{ secrets.ENV_BASE_API_URL }} >> .env
+
+          echo "$ALLMYSECRETS" | jq -r '. | to_entries[] | select(.key | startswith("ENV")) | .key + "=" + (.value|tojson)' |
+          while read i; 
+          do 
+            echo "${i/ENV_/""}" >> .env
+          done
+
           cat .env
+        shell: bash
+        env:
+          ALLMYSECRETS: ${{ toJSON(secrets) }}
       - name: Install Dependencies
         run: npm ci
       - name: Build the Application

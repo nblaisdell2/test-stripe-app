@@ -4,18 +4,16 @@ config();
 
 import React from "react";
 import { createRoot } from "react-dom/client";
-
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
 import Home from "./src/routes/Home";
+import Test from "./src/routes/Test";
 import Activity from "./src/routes/Activity";
 import Subscription from "./src/routes/Subscription";
-import { Auth0ProviderWithNavigate } from "./src/components/Auth0WithNavigate";
-import Test from "./src/routes/Test";
 import ErrorPage from "./src/components/ErrorPage";
 import { AuthenticationGuard } from "./src/components/AuthenticationGuard";
+import { Auth0ProviderWithNavigate } from "./src/components/Auth0WithNavigate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,9 +21,7 @@ const queryClient = new QueryClient({
       // If a query fails, don't retry
       retry: false,
       retryOnMount: false,
-
       // data is never considered stale
-      // Can I still update optimistically with this value?
       staleTime: Infinity,
 
       // suspense: true,

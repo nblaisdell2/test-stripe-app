@@ -40,6 +40,7 @@ export function useSQLMutation<TDataQuery, TDataOutput>(
   );
 
   const [foundError, setFoundError] = useState(false);
+  
   useEffect(() => {
     if (queryKey && isError) {
       const timer = window.setTimeout(() => {
