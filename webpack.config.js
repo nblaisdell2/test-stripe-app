@@ -70,12 +70,7 @@ module.exports = {
      * "only" is used if enable Hot Module Replacement without page
      * refresh as a fallback in case of build failures
      */
-    hot: false,
-    /** "liveReload"
-     * disable live reload on the browser. "hot" must be set to false for this to work
-     */
-    liveReload: true,
-
+    hot: true,
     compress: true,
   },
   watchOptions: {
